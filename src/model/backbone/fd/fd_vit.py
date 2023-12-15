@@ -269,6 +269,7 @@ class VisionTransformer(nn.Module):
                  use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False, 
                  use_mean_pooling=True, init_scale=0.001, with_cls_token=True, use_checkpoint=False, with_k_bias=False):
         super().__init__()
+        self.depth=depth
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim
         self.patch_size = patch_size
