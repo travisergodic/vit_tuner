@@ -5,7 +5,7 @@ import torch
 from .pos_embed import interpolate_pos_embed
 
 
-logger = logging.info(__name__)
+logger = logging.getLogger(__name__)
 
 
 def load_pretrained(model, pretrained): 

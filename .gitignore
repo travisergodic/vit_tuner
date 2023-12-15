@@ -1,3 +1,6 @@
 *.pyc
 log/*
 checkpoints/*
+tests/*
+weights/*
+test.py
