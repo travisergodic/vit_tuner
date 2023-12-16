@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 
-class DataframeDataset(Dataset):
+class CustomDataset(Dataset):
     def __init__(self, df, filename_col, y_cols, image_dir, image_transform=None):
         super().__init__()
         self.df = df
@@ -27,7 +27,7 @@ class DataframeDataset(Dataset):
         if self.image_transform is not None:
             image = self.image_transform(image)
 
-        return {"data": image, "label": label, "name": os.path.basename(image_path)}
+        return {"data": image, "targets": label, "name": os.path.basename(image_path)}
 
     def __len__(self):
         return len(self.df)

@@ -9,9 +9,8 @@ from src.eval.metric import METRIC
 
 @EVALUATOR.register
 class MultiTaskEvaluator:
-    def __init__(self, model, device, metric_cfg_list, task_names, loss_fn=None):
-        self.model = model
-        self.device = device
+    def __init__(self, metric_cfg_list, task_names, loss_fn=None):
+
         self.metrics = [METRIC.build(**metric_cfg) for metric_cfg in metric_cfg_list]
         self.task_names=task_names
         self.loss_fn = loss_fn

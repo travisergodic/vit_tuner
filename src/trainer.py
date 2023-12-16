@@ -1,79 +1,71 @@
-import os
 import logging
 from tqdm import tqdm
-from pathlib import Path
 from collections import defaultdict
 
 import torch
-import numpy as np
 
-# logger
 logger = logging.getLogger(__name__)
 
 
 class Trainer:
-    def __init__(
-            self, model, evaluator, optimizer, iter, loss_fn, device, n_epochs, iter_scheduler=None,
-            epoch_scheduler=None, save_freq=5, checkpoint_dir=None, monitor='loss'
-        ):
+    def __init__(self, model, iteration, optimizer, scheduler, loss_fn, evaluators, device, n_epochs):
         self.device = device
         self.model = model.to(self.device)
-        self.evalator = evaluator
+        self.evalators = evaluators
         self.optimizer = optimizer
-        self.iter_scheduler = iter_scheduler
-        self.epoch_scheduler = epoch_scheduler
-        self.iter_hook = iter_hook
+        self.scheduler = scheduler
+        self.iteration = iteration
         self.loss_fn = loss_fn
         self.n_epochs = n_epochs
-        self.save_freq = save_freq
-        self.checkpoint_dir = checkpoint_dir
-        self.monitor = monitor
-        self.best_epoch = 0
         self.epoch_train_records = defaultdict(list)
         self.epoch_test_records = defaultdict(list)
 
-    def fit(self, train_loader, test_loader=None):
-        for self.epoch in range(1, self.n_epochs + 1): 
+    def train(self, train_loader, test_loader=None):
+        num_steps=len(train_loader)
+        for self.epoch in range(self.n_epochs): 
             self.model.train()
             pbar = tqdm(train_loader)
             pbar.set_description(f"Epoch {self.epoch}/{self.n_epochs}") 
-            iter_train_loss_records = []
+            iter_train_records = defaultdict(list)
             
-            for self.iter, batch in enumerate(pbar):
-                X, y = batch["data"].to(self.device), batch["label"].to(self.device)
-                train_loss = self.iter_hook.run_iter(self, X, y).item()
-                pbar.set_postfix(loss=train_loss)
-                iter_train_loss_records.append(train_loss)
-                if self.iter_scheduler is not None:
-                    self.iter_scheduler.step(self.epoch + self.iter/len(train_loader))
+            for self.idx, batch in enumerate(pbar):
+                X, y = batch["data"].to(self.device), batch["targets"].to(self.device)
+                iter_info = self.iter_hook.run_iter(self, X, y).item()
 
-            self.epoch_train_records['loss'].append(np.mean(iter_train_loss_records))
-            logger.info(f'train_loss: {self.epoch_train_records["loss"][-1]}')  
+                pbar.set_postfix(loss=iter_info["loss"])
+                for k, v in iter_info.items():
+                    iter_train_records[k].append(v)
 
-            # update scheduler
-            if self.epoch_scheduler is not None:
-                self.epoch_scheduler.step()
+                if self.scheduler is not None:
+                    self.scheduler.step_update(self.epoch * num_steps + self.idx)
+
+            self.train_metric_dict=self.evaluators["train"].calculate(self, iter_train_records)
+            self.call_hooks("after_train")
 
             # evaluate
             if test_loader is not None:
                 self.test(test_loader)
-                
-            # save best checkpoint
-            if test_loader is not None:
-                criterion = min if self.monitor == 'loss' else max
-                if self.epoch == 1 or (self.epoch_test_records[self.monitor][-1] == criterion(self.epoch_test_records[self.monitor])):
-                    self.best_epoch = self.epoch
-                    Path(self.checkpoint_dir).mkdir(parents=True, exist_ok=True)
-                    torch.save(self.model.state_dict(), os.path.join(self.checkpoint_dir, 'best.pt'))
-            
-            # save last checkpoint
-            if self.epoch % self.save_freq == 0:
-                Path(self.checkpoint_dir).mkdir(parents=True, exist_ok=True)
-                torch.save(self.model.state_dict(), os.path.join(self.checkpoint_dir, 'last.pt'))
+
+            self.call_hooks("after_test")
 
     @torch.no_grad()
     def test(self, test_loader):
-        performance_dict = self.evalator.get_eval_metric(test_loader)
-        for metric_name, performance in performance_dict.items():
-            self.epoch_test_records[metric_name].append(performance)
-        logger.info(f'performance: {performance_dict}')
+        self.model.to(self.device)
+        self.model.eval()
+
+        for batch in tqdm(test_loader):
+            X, y, names = batch["data"].to(self.device), batch["targets"].to(self.device), batch["name"]
+            pred = self.model(X)
+            iter_test_records = defaultdict(list)
+
+            iter_test_records["targets"].append(y.cpu().numpy())
+            iter_test_records["outputs"].append(pred.cpu().numpy())
+            iter_test_records["loss"].append([self.loss_fn(pred, y).item()])
+        self.test_metric_dict=self.evalators["test"].calculate(self, iter_test_records)
+
+    def call_hooks(self, name):
+        for hook in self._hooks:
+            getattr(hook, name)()
+
+    def register_hooks(self, hook_cfg_list):
+        pass 

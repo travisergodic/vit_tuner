@@ -1,71 +1,65 @@
 import torch
 from torch import inf
 
-from src.registry import ITER
+from src.registry import ITERATION
 
 
-def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
+def get_grad_norm(parameters, norm_type=2):
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
-    parameters = [p for p in parameters if p.grad is not None]
+    parameters = list(filter(lambda p: p.grad is not None, parameters))
     norm_type = float(norm_type)
-    if len(parameters) == 0:
-        return torch.tensor(0.)
-    device = parameters[0].grad.device
-    if norm_type == inf:
-        total_norm = max(p.grad.detach().abs().max().to(device) for p in parameters)
-    else:
-        total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]), norm_type)
+    total_norm = []
+    for p in parameters:
+        param_norm = p.grad.data.norm(norm_type)
+        # total_norm += param_norm.item() ** norm_type
+        total_norm.append(param_norm)
+    # total_norm = total_norm ** (1. / norm_type)
+    total_norm = torch.stack(total_norm).norm(norm_type).item()
     return total_norm
 
 
-@ITER_HOOK.register
-class NormalIterHook:
-    def run_iter(self, trainer, X, y):
-        pred = trainer.model(X)
-        loss = trainer.loss_fn(pred, y)
-        loss.backward()
-        trainer.optimizer.step()
-        trainer.optimizer.zero_grad()
-        return loss
 
-
-@ITER_HOOK.register
-class SamIterHook:
-    def run_iter(self, trainer, X, y):
-        loss = trainer.loss_fn(trainer.model(X), y)  # use this loss for any training statistics
-        loss.backward()
-        trainer.optimizer.first_step(zero_grad=True)
-
-        # second forward-backward pass
-        trainer.loss(trainer.model(X), y).backward()  # make sure to do a full forward pass
-        trainer.optimizer.second_step(zero_grad=True)
-        return loss
-    
-
-@ITER_HOOK.register
-class AccumulateIterHook:
-    def __init__(self, clip_grad=None, accum_iter=1):
+@ITERATION.register("normal")
+class AMPIteration:
+    def __init__(self, accumulate_steps, clip_grad, enable_amp=False):
         self._scaler = torch.cuda.amp.GradScaler()
-        self.clip_grad = clip_grad
-        self.accum_iter = accum_iter
+        self.accumulate_steps=accumulate_steps
+        self.clip_grad=clip_grad
+        self.enable_amp=enable_amp
 
     def run_iter(self, trainer, X, y):
-        loss = trainer.loss_fn(trainer.model(X), y)
-
-        loss /= self.accum_iter
-        self._scaler.scale(loss).backward()
+        with torch.cuda.amp.autocast(enabled=self.enable_amp):
+            pred=trainer.model(X)
         
-        if (trainer.iter + 1) % self.accum_iter == 0:
-            if self.clip_grad is not None:
-                self._scaler.unscale_(trainer.optimizer)  # unscale the gradients of optimizer's assigned params in-place
-                norm = torch.nn.utils.clip_grad_norm_(trainer.model.parameters(), self.clip_grad)
+        if self.accumulate_steps > 1:
+            loss = trainer.criterion(pred, y)
+            loss = loss / self.accumulate_steps
+            self._scaler.scale(loss).backward()
+            if (trainer.idx + 1) % self.accumulate_steps == 0:
+                if self.clip_grad: 
+                    self._scaler.unscale_(trainer.optimizer)
+                    grad_norm=torch.nn.utils.clip_grad_norm_(trainer.model.parameters(), self.clip_grad)
+                else:
+                    grad_norm=get_grad_norm(trainer.model.parameter())
+                self._scaler.step(trainer.optimizer)
+                trainer.optimizer.zero_grad()
+                self._scaler.update()
             else:
+                grad_norm=get_grad_norm(trainer.model.parameter())
+
+        else:
+            loss = trainer.criterion(pred, y)
+            trainer.optimizer.zero_grad()
+            self._scaler.scale(loss).backward()
+            if self.clip_grad:
                 self._scaler.unscale_(trainer.optimizer)
-                norm = get_grad_norm_(trainer.model.parameters())
+                grad_norm = torch.nn.utils.clip_grad_norm_(trainer.model.parameters(), self.clip_grad)
+            else:
+                grad_norm = get_grad_norm(trainer.model.parameters())
             self._scaler.step(trainer.optimizer)
             self._scaler.update()
-
-        if (trainer.iter + 1) % self.accum_iter == 0:
-            trainer.optimizer.zero_grad()
-        return loss  * self.accum_iter
+        return dict(
+            loss=loss.item(), grad_norm=grad_norm, targets=y, 
+            outputs=pred, loss_scale=self._scaler.get_scale()
+        )

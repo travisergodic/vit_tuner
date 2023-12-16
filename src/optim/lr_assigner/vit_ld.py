@@ -104,6 +104,7 @@ class LayerwiseDecayAssigner:
         else: 
             scales=[self.layer_decay ** i for i in reversed(range(backbone.depth+2))]
 
+        # backbone
         for name, param in backbone.named_parameters():
             if not param.requires_grad:
                 continue
