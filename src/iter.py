@@ -21,7 +21,7 @@ def get_grad_norm(parameters, norm_type=2):
 
 
 @ITERATION.register("normal")
-class AMPIteration:
+class NormalIteration:
     def __init__(self, accumulate_steps, clip_grad, enable_amp=False):
         self._scaler = torch.cuda.amp.GradScaler()
         self.accumulate_steps=accumulate_steps

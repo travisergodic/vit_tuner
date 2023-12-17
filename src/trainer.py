@@ -1,10 +1,20 @@
 import logging
+import itertools
 from tqdm import tqdm
 from collections import defaultdict
 
 import torch
 
+from src.hooks import HOOKS
+
 logger = logging.getLogger(__name__)
+
+
+def to_numpy(x):
+    if isinstance(x, dict):
+        return {k: v.cpu().numpy() for k, v in x.items()}
+    else:
+        return x.cpu().numpy()
 
 
 class Trainer:
@@ -17,8 +27,9 @@ class Trainer:
         self.iteration = iteration
         self.loss_fn = loss_fn
         self.n_epochs = n_epochs
-        self.epoch_train_records = defaultdict(list)
-        self.epoch_test_records = defaultdict(list)
+        self.epoch_train_records = []
+        self.epoch_test_records = []
+        self._hooks = [] 
 
     def train(self, train_loader, test_loader=None):
         num_steps=len(train_loader)
@@ -30,23 +41,27 @@ class Trainer:
             
             for self.idx, batch in enumerate(pbar):
                 X, y = batch["data"].to(self.device), batch["targets"].to(self.device)
+                self.call_hooks("before_train_iter")
                 iter_info = self.iter_hook.run_iter(self, X, y).item()
+                self.call_hooks("after_train_iter")
 
                 pbar.set_postfix(loss=iter_info["loss"])
+
                 for k, v in iter_info.items():
-                    iter_train_records[k].append(v)
+                    iter_train_records[k].append(to_numpy(v))
 
                 if self.scheduler is not None:
                     self.scheduler.step_update(self.epoch * num_steps + self.idx)
 
-            self.train_metric_dict=self.evaluators["train"].calculate(self, iter_train_records)
-            self.call_hooks("after_train")
+            train_metric_dict=self.evaluators["train"].calculate(iter_train_records)
+            train_metric_dict["epoch"]=self.epoch
+            self.epoch_train_records.append(train_metric_dict)
+            self.call_hooks("after_train_epoch")
 
             # evaluate
             if test_loader is not None:
                 self.test(test_loader)
-
-            self.call_hooks("after_test")
+            self.call_hooks("after_test_epoch")
 
     @torch.no_grad()
     def test(self, test_loader):
@@ -54,18 +69,34 @@ class Trainer:
         self.model.eval()
 
         for batch in tqdm(test_loader):
-            X, y, names = batch["data"].to(self.device), batch["targets"].to(self.device), batch["name"]
+            X, y = batch["data"].to(self.device), batch["targets"].to(self.device)
+            self.call_hooks("before_test_iter")
             pred = self.model(X)
-            iter_test_records = defaultdict(list)
+            self.call_hooks("after_test_iter")
 
-            iter_test_records["targets"].append(y.cpu().numpy())
-            iter_test_records["outputs"].append(pred.cpu().numpy())
+            iter_test_records = defaultdict(list)
+            iter_test_records["targets"].append(to_numpy(y))
+            iter_test_records["outputs"].append(to_numpy(pred))
             iter_test_records["loss"].append([self.loss_fn(pred, y).item()])
-        self.test_metric_dict=self.evalators["test"].calculate(self, iter_test_records)
+
+        test_metric_dict=self.evalators["test"].calculate(iter_test_records)
+        test_metric_dict["epoch"]=self.epoch
+        self.epoch_test_records.append(test_metric_dict)
 
     def call_hooks(self, name):
         for hook in self._hooks:
-            getattr(hook, name)()
+            getattr(hook, name)(self)
 
     def register_hooks(self, hook_cfg_list):
-        pass 
+        default_hook_cfg_list=[
+            dict(type='CheckpointHook', top_k=1, checkpoint_dir="./checkpints", monitor="loss", rule="less", save_begin=1),
+        ]
+
+        for i, default_hook_cfg in enumerate(default_hook_cfg_list):
+            if default_hook_cfg["type"] in (cfg["type"] for cfg in hook_cfg_list):
+                del default_hook_cfg[i]
+
+        for hook_cfg in itertools.chain(default_hook_cfg_list, hook_cfg_list):
+            self._hooks.append(HOOKS.build(**hook_cfg))
+
+        self._hooks.sort(key=lambda x: x.priority, reverse=True)

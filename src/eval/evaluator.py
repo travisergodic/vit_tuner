@@ -15,7 +15,7 @@ class SingleTaskEvaluator:
     def __init__(self, metric_cfg_list):
         self.metrics = [METRIC.build(**metric_cfg) for metric_cfg in metric_cfg_list]
 
-    def calculate(self, trainer, iter_records):
+    def calculate(self, iter_records):
         eval_df=pd.DataFrame(
             {
                 "outputs": np.concatenate(iter_records["outputs"], axis=0),
@@ -34,7 +34,7 @@ class MultiTaskEvaluator:
         self.metrics = [METRIC.build(**metric_cfg) for metric_cfg in metric_cfg_list]
         self.task_names=task_names
 
-    def calculate(self, trainer, iter_records):
+    def calculate(self, iter_records):
         eval_df=pd.DataFrame(
             {
                 **{f"output_{name}": np.concatenate([ele[i] for ele in iter_records["output"]]) for i, name in enumerate(self.task_names)},

@@ -5,8 +5,8 @@ from src.registry import METRIC
 
 
 class BaseMetric:
-    def __init__(self, **kwargs):
-        self.tag=kwargs.pop("tag", None)
+    def __init__(self, tag=None, **kwargs):
+        self.tag=tag
         self.metric_cfg=kwargs
 
     def __repr__(self) -> str:
@@ -17,8 +17,8 @@ class BaseMetric:
 
 @METRIC.register
 class Accuracy(BaseMetric):
-    def __init__(self, gt_col, pred_col, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, gt_col, pred_col, tag="acc", **kwargs):
+        super().__init__(tag, **kwargs)
         self.gt_col=gt_col
         self.pred_col=pred_col
         
@@ -28,8 +28,8 @@ class Accuracy(BaseMetric):
 
 @METRIC.register
 class Recall(BaseMetric):
-    def __init__(self, gt_col, pred_col, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, gt_col, pred_col, tag=None, **kwargs):
+        super().__init__(tag, **kwargs)
         self.gt_col=gt_col
         self.pred_col=pred_col
     
@@ -39,8 +39,8 @@ class Recall(BaseMetric):
 
 @METRIC.register
 class Precision(BaseMetric):
-    def __init__(self, tag, gt_col, pred_col, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, gt_col, pred_col, tag=None, **kwargs):
+        super().__init__(tag, **kwargs)
         self.gt_col=gt_col
         self.pred_col=pred_col
 
@@ -50,8 +50,8 @@ class Precision(BaseMetric):
 
 @METRIC.register("AUC")
 class AUC(BaseMetric):
-    def __init__(self, gt_col, prob_col, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, gt_col, prob_col, tag=None, **kwargs):
+        super().__init__(tag, **kwargs)
         self.gt_col=gt_col
         self.prob_col=prob_col
     

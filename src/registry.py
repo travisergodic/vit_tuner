@@ -50,6 +50,7 @@ class Register:
         return obj 
     
 
+DATASET=Register('dataset')
 HEAD = Register('head')
 BACKBONE = Register('backbone')
 LOSS = Register('loss')
@@ -58,5 +59,5 @@ EVALUATOR = Register('evaluator')
 OPTIMIZER = Register('optimizer')
 SCHEDULER = Register('scheduler')
 ITERATION = Register('iteration')
-HOOK = Register('hook')
+HOOKS = Register('hooks')
 LR_ASSIGNER = Register('lr_assigner')
