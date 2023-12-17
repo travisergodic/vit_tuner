@@ -18,20 +18,22 @@ def to_numpy(x):
 
 
 class Trainer:
-    def __init__(self, model, iteration, optimizer, scheduler, loss_fn, evaluators, device, n_epochs):
+    def __init__(self, model, iteration, optimizer, scheduler, loss_fn, evaluator, device, n_epochs, checkpoint_dir):
         self.device = device
         self.model = model.to(self.device)
-        self.evalators = evaluators
+        self.evalators = evaluator
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.iteration = iteration
         self.loss_fn = loss_fn
         self.n_epochs = n_epochs
+        self.checkpoint_dir=checkpoint_dir
         self.epoch_train_records = []
         self.epoch_test_records = []
         self._hooks = [] 
 
     def train(self, train_loader, test_loader=None):
+        self.call_hooks("before_run")
         num_steps=len(train_loader)
         for self.epoch in range(self.n_epochs): 
             self.model.train()
@@ -53,7 +55,7 @@ class Trainer:
                 if self.scheduler is not None:
                     self.scheduler.step_update(self.epoch * num_steps + self.idx)
 
-            train_metric_dict=self.evaluators["train"].calculate(iter_train_records)
+            train_metric_dict=self.evaluator.calculate(iter_train_records)
             train_metric_dict["epoch"]=self.epoch
             self.epoch_train_records.append(train_metric_dict)
             self.call_hooks("after_train_epoch")
@@ -62,6 +64,7 @@ class Trainer:
             if test_loader is not None:
                 self.test(test_loader)
             self.call_hooks("after_test_epoch")
+        self.call_hooks("after_run")
 
     @torch.no_grad()
     def test(self, test_loader):
@@ -79,7 +82,7 @@ class Trainer:
             iter_test_records["outputs"].append(to_numpy(pred))
             iter_test_records["loss"].append([self.loss_fn(pred, y).item()])
 
-        test_metric_dict=self.evalators["test"].calculate(iter_test_records)
+        test_metric_dict=self.evaluator.calculate(iter_test_records)
         test_metric_dict["epoch"]=self.epoch
         self.epoch_test_records.append(test_metric_dict)
 
@@ -89,7 +92,7 @@ class Trainer:
 
     def register_hooks(self, hook_cfg_list):
         default_hook_cfg_list=[
-            dict(type='CheckpointHook', top_k=1, checkpoint_dir="./checkpints", monitor="loss", rule="less", save_begin=1),
+            dict(type='CheckpointHook', top_k=1, monitor="loss", rule="less", save_begin=1),
         ]
 
         for i, default_hook_cfg in enumerate(default_hook_cfg_list):

@@ -7,6 +7,8 @@ import pandas as pd
 import seaborn as sns
 from sklearn import metrics
 import matplotlib.pyplot as plt
+from rich.table import Table
+from rich.console import Console
 
 logger = logging.getLogger(__name__)
 
@@ -66,10 +68,37 @@ def plot_confusion_table(y, pred, save_path):
     conf_fig = conf_plot.get_figure()
     plt.title("confusion matrix") 
     conf_fig.savefig(save_path)
-    plt.clf()
+    plt.clf()    
     
+
+def get_pretty_table(data, title):
+    if isinstance(data, pd.Series):
+        data=data.to_frame().reset_index()
     
-def get_train_test_dfs(df):
-    return df.loc[df["seed666"] == "train", :].copy().reset_index(), df.loc[df["seed666"] != "train", :].copy().reset_index() 
-    
-    
+    elif not isinstance(data, pd.DataFrame):
+        raise ValueError()
+
+    table=Table(title=title)
+    for col in data:
+        table.add_column(col, justify="left", style="cyan")
+        
+    for _, row in data.iterrows():
+        table.add_row(*[str(row[col]) for col in data])
+
+    console = Console()
+    with console.capture() as capture:
+        console.print(table, end='')
+    return capture.get()
+
+
+def plot_loss_curve(trainer, path):
+    train_record_df=pd.DataFrame.from_records(trainer.epoch_train_records)
+    test_record_df=pd.DataFrame.from_records(trainer.epoch_test_records)
+    plt.plot(train_record_df["epoch"], train_record_df["loss"], '-b', label="train_loss")
+    plt.plot(test_record_df["epoch"], test_record_df["loss"], '-r', label="test_loss")
+    plt.savefig(path)
+
+
+def save_train_records(trainer, save_dir):
+    pd.DataFrame.from_records(trainer.epoch_train_records).to_csv(os.path.join(save_dir, "train_record.csv"))
+    pd.DataFrame.from_records(trainer.epoch_test_records).to_csv(os.path.join(save_dir, "test_record.csv"))

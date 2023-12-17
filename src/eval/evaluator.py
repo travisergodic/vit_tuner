@@ -30,9 +30,8 @@ class SingleTaskEvaluator:
 
 @EVALUATOR.register("single_task")
 class MultiTaskEvaluator:
-    def __init__(self, metric_cfg_list, task_names):
+    def __init__(self, metric_cfg_list):
         self.metrics = [METRIC.build(**metric_cfg) for metric_cfg in metric_cfg_list]
-        self.task_names=task_names
 
     def calculate(self, iter_records):
         eval_df=pd.DataFrame(

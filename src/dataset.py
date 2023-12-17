@@ -17,7 +17,7 @@ class SingleTaskDataset(Dataset):
         self.image_transform = image_transform 
 
     def __getitem__(self, index):
-        label = int(self.df.loc[index, self.y_cols[0]])
+        label = int(self.df.loc[index, self.y_col[0]])
 
         image_path = os.path.join(self.image_dir, self.df.loc[index, self.filename_col])
         image = Image.open(image_path).convert("L").convert("RGB")
@@ -33,16 +33,16 @@ class SingleTaskDataset(Dataset):
 
 @DATASET.register("multi_task")
 class MultiTaskDataset(Dataset):
-    def __init__(self, df, filename_col, y_cols, image_dir, image_transform=None):
+    def __init__(self, df, filename_col, y_col, image_dir, image_transform=None):
         super().__init__()
         self.df = df
         self.filename_col = filename_col
-        self.y_cols = y_cols
+        self.y_col = y_col
         self.image_dir = image_dir
         self.image_transform = image_transform 
 
     def __getitem__(self, index):
-        label = self.df.loc[index, self.y_cols].astype("int64").to_dict() 
+        label = self.df.loc[index, self.y_col].astype("int64").to_dict() 
 
         image_path = os.path.join(self.image_dir, self.df.loc[index, self.filename_col])
         image = Image.open(image_path).convert("L").convert("RGB")

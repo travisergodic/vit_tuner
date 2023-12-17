@@ -3,7 +3,7 @@ import torch.nn as nn
 from src.registry import HEAD
 
 
-@HEAD.register
+@HEAD.register("single_output")
 class SingleOutputHead(nn.Module):
     def __init__(self, in_features=768, out_features=512, dropout=0.0):
         super(SingleOutputHead, self).__init__()  
@@ -16,7 +16,7 @@ class SingleOutputHead(nn.Module):
         return self.linear_layer(self.dropout_layer(X))
 
 
-@HEAD.register
+@HEAD.register("multi_output")
 class MultiOutputHead(nn.Module):
     def __init__(self, in_features=2048, out_features_list=None, task_names=None, dropout=0.0):
         super(MultiOutputHead, self).__init__() 

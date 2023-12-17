@@ -82,7 +82,7 @@ def check_keywords_in_name(name, keywords=()):
 
 class LayerwiseDecayAssigner:
     get_layer_func=None
-    def __init__(self, weight_decay, layer_decay, skip_list, skip_keywords):
+    def __init__(self, weight_decay, layer_decay, skip_list=(), skip_keywords=()):
         """
         skip_list (_type_): 
             mae --> model.no_weight_decay()

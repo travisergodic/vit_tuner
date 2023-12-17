@@ -7,36 +7,37 @@ sys.path.insert(0, os.getcwd())
 import torch
 import pandas as pd
 
-from src.dataset import CustomDataset 
 from src.logger_helper import setup_logger
 from src.trainer import Trainer
 from src.model import build_model
+from src.dataset import DATASET
 from src.iter import ITERATION
 from src.loss import LOSS
 from src.optim import OPTIMIZER, SCHEDULER, LR_ASSIGNER
 from src.eval import EVALUATOR
 from src.transform import train_transform, test_transform
-from src.utils import (get_cfg_by_file, save_performance_history_dataframe_from_trainer, save_performance_dataframe_from_trainer)
+from src.utils import get_cfg_by_file, plot_loss_curve, save_train_records
 
 
 logger = setup_logger(level=logging.INFO)
 
 def main():
-    # read csv 
     df = pd.read_csv(args.csv_path)
 
     if args.debug: 
         df = df.loc[:500, :].copy()
 
     # dataset
-    train_dataset = CustomDataset(
-        df.loc[:, df[args.split_col]], "filename", args.y_cols, args.image_dir, 
-        image_transform=train_transform
+    dataset_type="single_task" if isinstance(args.y_col, str) else "multi_task"
+
+    train_dataset=DATASET.build(
+        type=dataset_type, df=df.loc[df[args.split_col], :], filename_col="filename", 
+        y_col=args.y_col, image_dir=args.image_dir, image_transform=train_transform
     )
 
-    test_dataset = CustomDataset(
-        df.loc[:, df[args.split_col]], "filename", args.y_cols, args.image_dir,
-        image_transform=test_transform
+    test_dataset=DATASET.build(
+        type=dataset_type, df=df.loc[~df[args.split_col], :], filename_col="filename", 
+        y_col=args.y_col, image_dir=args.image_dir, image_transform=test_transform
     )
 
     # dataloader
@@ -57,8 +58,24 @@ def main():
     loss_fn = LOSS.build(**config.loss_cfg)
 
     # evaluator
-    evaluator = EVALUATOR.build(model=model, device=args.device, loss_fn=loss_fn, **config.evaluator_cfg)
-    optimizer = OPTIMIZER.build(model=model, optimizer_cfg=config.optimizer_cfg)
+    evaluator = EVALUATOR.build(**config.evaluator_cfg)
+
+    # optimizer
+    if args.optim:
+        config.optimizer_cfg["type"] = args.optim
+
+    if args.lr:
+        config.optimizer_cfg["lr"] = args.lr
+
+    if args.weight_decay:
+        config.optimizer_cfg["weight_decay"] = args.weight_decay
+
+    # lr assigner
+    lr_assigner=LR_ASSIGNER.build(**config.lr_assigner_cfg)
+
+    optimizer = OPTIMIZER.build(
+        params=lr_assigner.get_params(model), **config.optimizer_cfg
+    )
 
     # load checkpoint
     if args.weight is not None:
@@ -66,42 +83,32 @@ def main():
         logger.info(f"Load model weights from {args.weight} successfully.")
 
     # scheduler
-    scheduler = SCHEDULER.build(optimizer=optimizer, **config.epoch_scheduler_cfg)
+    scheduler = SCHEDULER.build(
+        optimizer=optimizer, n_iter_per_epoch=len(train_loader),  
+        epochs=args.epochs, **config.epoch_scheduler_cfg
+    )
 
     # iter hook
-    iter_hook = ITERATION.build(**config.iter_hook_cfg)
-    logger.info(f"Use {type(iter_hook).__name__} object for each training iteration.")
+    iteration = ITERATION.build(**config.iter_hook_cfg)
 
     # build trainer
     trainer = Trainer(
-        model=model,
-        evaluator=evaluator, 
-        optimizer=optimizer,
-        iter_hook=iter_hook,
-        loss_fn=loss_fn,
-        device=args.device,
-        n_epochs=args.n_epochs,
-        iter_scheduler=iter_scheduler,
-        epoch_scheduler=epoch_scheduler, 
-        save_freq=args.save_freq,
-        checkpoint_dir=f"./checkpoints/{args.exp_name}",
-        monitor=args.monitor
+        model=model, iteration=iteration, optimizer=optimizer, scheduler=scheduler,
+        loss_fn=loss_fn, evaluator=evaluator, device=args.device, n_epochs=args.n_epochs,
+        checkpoint_dir=f"./checkpoints/{args.exp_name}"
     )
-
     # train model
-    trainer.fit(train_loader, test_loader)
+    trainer.train(train_loader, test_loader)
 
     # create artifacts & save to "checkpoints/{args.exp_name}"
-    eval_df = evaluator.get_eval_dataframe(test_loader)
-    eval_df.to_csv(f"./checkpoints/{args.exp_name}/pred_result.csv")
-    logger.info(f"Save prediction result at ./checkpoints/{args.exp_name}/pred_result.csv")
+    pd.DataFrame.from_records(trainer.epoch_test_records).to_csv(f"./checkpoints/{args.exp_name}/history.csv")
+    logger.info(f"save performance history at ./checkpoints/{args.exp_name}/history.csv")
 
-    save_performance_history_dataframe_from_trainer(trainer, f"./checkpoints/{args.exp_name}/performance_history.csv")
-    logger.info(f"Save performance history at ./checkpoints/{args.exp_name}/performance_history.csv")
-    
-    save_performance_dataframe_from_trainer(trainer, f"./checkpoints/{args.exp_name}/performance_report.csv")
-    logger.info(f"Save performance report at ./checkpoints/{args.exp_name}/performance_report.csv")
-    
+    plot_loss_curve(trainer, f"./checkpoints/{args.exp_name}/loss.png")
+    logger.info(f"save loss curve at ./checkpoints/{args.exp_name}/history.csv")
+
+    save_train_records(trainer)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train image classifier.")
@@ -110,9 +117,7 @@ if __name__ == "__main__":
     parser.add_argument("--csv_path", type=str, required=True)
     parser.add_argument("--image_dir", type=str, required=True)
     parser.add_argument("--n_epochs", type=int)
-    parser.add_argument("--monitor", type=str, default="loss")
-    parser.add_argument("--save_freq", type=int)
-    parser.add_argument("--y_cols", type=str, nargs='+', default=["expansion", "ICM", "TE"])
+    parser.add_argument("--y_col", type=str, nargs='+', default=["expansion", "ICM", "TE"])
     parser.add_argument("--bs", type=int, default=16)
     parser.add_argument("--lr", type=float)
     parser.add_argument("--optim", type=str, choices=["Adam", "SGD", "AdamW"])
