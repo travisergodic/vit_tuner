@@ -21,13 +21,6 @@ from src.utils import get_cfg_by_file, plot_loss_curve, save_train_records
 
 logger = setup_logger(level=logging.INFO)
 
-def clean_data(df):
-    mask = df["expansion"].isin([1, 2, 3, 4, 5, 6]) & df["TE"].isin([1, 2, 3]) & df["ICM"].isin([1, 2, 3])
-    df["expansion"] = df["expansion"] - 1
-    df["TE"] = df["TE"] - 1
-    df["ICM"] = df["ICM"] - 1
-    return df.loc[mask, :].copy()  
-
 
 def main():
     df = pd.read_csv(args.csv_path)

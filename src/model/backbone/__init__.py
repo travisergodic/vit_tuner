@@ -1,4 +1,4 @@
 
-from .fd import BACKBONE
-from .ft import BACKBONE
+from .feature_distillation import BACKBONE
+from .fine_tune import BACKBONE
 from .mae import BACKBONE
