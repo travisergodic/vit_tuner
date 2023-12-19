@@ -4,3 +4,4 @@ checkpoints/*
 tests/*
 weights/*
 test.py
+scripts/*.sh

@@ -11,8 +11,7 @@ def load_model(model, checkpoint_path):
 
 def build_model(model_cfg):
     backbone_cfg, head_cfg = model_cfg["backbone"], model_cfg["head"]
-    backbone, embed_dim = BACKBONE.build(**backbone_cfg)
-    head_cfg["in_features"] = embed_dim
+    backbone = BACKBONE.build(**backbone_cfg)
     head = HEAD.build(**head_cfg)
     model = ClassificationModel(backbone, head)
     if model_cfg.get("checkpoint_path") is not None:
@@ -29,4 +28,5 @@ class ClassificationModel(nn.Module):
     def forward(self, X):
         X = self.backbone(X)
         X = self.head(X)
+        print(type(X["expansion"]))
         return X

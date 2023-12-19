@@ -5,7 +5,7 @@ import torch.nn as nn
 from torchvision import transforms
 
 
-IMAGE_SIZE=288
+IMAGE_SIZE=224
 
 
 train_transform = transforms.Compose(

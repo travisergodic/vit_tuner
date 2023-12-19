@@ -33,7 +33,7 @@ class NormalIteration:
             pred=trainer.model(X)
         
         if self.accumulate_steps > 1:
-            loss = trainer.criterion(pred, y)
+            loss = trainer.loss_fn(pred, y)
             loss = loss / self.accumulate_steps
             self._scaler.scale(loss).backward()
             if (trainer.idx + 1) % self.accumulate_steps == 0:
@@ -49,7 +49,7 @@ class NormalIteration:
                 grad_norm=get_grad_norm(trainer.model.parameter())
 
         else:
-            loss = trainer.criterion(pred, y)
+            loss = trainer.loss_fn(pred, y)
             trainer.optimizer.zero_grad()
             self._scaler.scale(loss).backward()
             if self.clip_grad:

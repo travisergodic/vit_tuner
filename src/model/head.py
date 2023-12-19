@@ -31,5 +31,5 @@ class MultiOutputHead(nn.Module):
     def forward(self, X):
         X = self.dropout_layer(X)
         return {
-            task_name:linear_layer for task_name, linear_layer in zip(self.task_names, self.linear_layers) 
+            task_name:linear_layer(X) for task_name, linear_layer in zip(self.task_names, self.linear_layers) 
         }

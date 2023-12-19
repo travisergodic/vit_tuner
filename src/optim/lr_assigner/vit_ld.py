@@ -118,7 +118,7 @@ class LayerwiseDecayAssigner:
                 this_weight_decay = self.weight_decay
 
             if self.__class__.get_layer_func is not None:
-                layer_id = self.__class__.get_layer_func(name)
+                layer_id = self.__class__.get_layer_func(name, num_layers=backbone.depth)
                 group_name = f"layer_{layer_id}_{group_name}"
             else:
                 layer_id = None

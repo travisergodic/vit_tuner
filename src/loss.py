@@ -10,7 +10,10 @@ class CrossEntropyLoss(nn.Module):
         self.loss_fn = nn.CrossEntropyLoss(**kwargs)
 
     def forward(self, y_pred, y_true):
-        return self.loss_fn(y_pred, y_true) * self.weight
+        print(y_true)
+        print(y_pred.shape)
+
+        return self.loss_fn(y_pred, y_true)
 
 
 @LOSS.register("multi_task")
@@ -18,7 +21,7 @@ class MultiTaskLoss(nn.Module):
     def __init__(self, task_to_loss_cfg, task_to_weight=None):
         super().__init__()
         self.task_to_loss_fn={
-            task: LOSS.build(cfg) for task, cfg in task_to_loss_cfg.items()
+            task: LOSS.build(**cfg) for task, cfg in task_to_loss_cfg.items()
         }
         self.task_to_weight={task: 1. for task in self.task_to_loss_fn} if task_to_weight is None else task_to_weight
 

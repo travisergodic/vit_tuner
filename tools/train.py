@@ -21,6 +21,14 @@ from src.utils import get_cfg_by_file, plot_loss_curve, save_train_records
 
 logger = setup_logger(level=logging.INFO)
 
+def clean_data(df):
+    mask = df["expansion"].isin([1, 2, 3, 4, 5, 6]) & df["TE"].isin([1, 2, 3]) & df["ICM"].isin([1, 2, 3])
+    df["expansion"] = df["expansion"] - 1
+    df["TE"] = df["TE"] - 1
+    df["ICM"] = df["ICM"] - 1
+    return df.loc[mask, :].copy()  
+
+
 def main():
     df = pd.read_csv(args.csv_path)
 
@@ -31,12 +39,12 @@ def main():
     dataset_type="single_task" if isinstance(args.y_col, str) else "multi_task"
 
     train_dataset=DATASET.build(
-        type=dataset_type, df=df.loc[df[args.split_col], :], filename_col="filename", 
+        type=dataset_type, df=df.loc[df[args.split_col]=="train", :].reset_index(), filename_col="filename", 
         y_col=args.y_col, image_dir=args.image_dir, image_transform=train_transform
     )
 
     test_dataset=DATASET.build(
-        type=dataset_type, df=df.loc[~df[args.split_col], :], filename_col="filename", 
+        type=dataset_type, df=df.loc[df[args.split_col]=="test", :].reset_index(), filename_col="filename", 
         y_col=args.y_col, image_dir=args.image_dir, image_transform=test_transform
     )
 
@@ -85,11 +93,11 @@ def main():
     # scheduler
     scheduler = SCHEDULER.build(
         optimizer=optimizer, n_iter_per_epoch=len(train_loader),  
-        epochs=args.epochs, **config.epoch_scheduler_cfg
+        epochs=args.n_epochs, **config.scheduler_cfg
     )
 
     # iter hook
-    iteration = ITERATION.build(**config.iter_hook_cfg)
+    iteration = ITERATION.build(**config.iter_cfg)
 
     # build trainer
     trainer = Trainer(
@@ -116,6 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("--exp_name", type=str, required=True)
     parser.add_argument("--csv_path", type=str, required=True)
     parser.add_argument("--image_dir", type=str, required=True)
+    parser.add_argument("--split_col", type=str)
     parser.add_argument("--n_epochs", type=int)
     parser.add_argument("--y_col", type=str, nargs='+', default=["expansion", "ICM", "TE"])
     parser.add_argument("--bs", type=int, default=16)

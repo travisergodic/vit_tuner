@@ -14,7 +14,7 @@ def cosine_lr_scheduler(
     return cosine_lr.CosineLRScheduler(
         optimizer,
         t_initial=num_steps - warmup_steps,
-        t_mul=1.,
+        # t_mul=1.,
         lr_min=min_lr,
         warmup_lr_init=warmup_lr_init,
         warmup_prefix=warmup_prefix,
