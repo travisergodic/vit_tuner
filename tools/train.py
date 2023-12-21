@@ -43,7 +43,8 @@ def main():
     # dataloader
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.bs, shuffle=True, 
-        num_workers=args.num_workers, pin_memory=True
+        num_workers=args.num_workers, pin_memory=True,
+        collate_fn=(multitask_collate_fn if len(args.y_col) > 1 else None)
     )
 
     test_loader = torch.utils.data.DataLoader(

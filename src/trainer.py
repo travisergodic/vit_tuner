@@ -16,7 +16,7 @@ class Trainer:
     def __init__(self, model, iteration, optimizer, scheduler, loss_fn, evaluator, device, n_epochs, checkpoint_dir):
         self.device = device
         self.model = model.to(self.device)
-        self.evalators = evaluator
+        self.evaluator = evaluator
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.iteration = iteration
@@ -48,7 +48,7 @@ class Trainer:
                 pbar.set_postfix(loss=iter_info["loss"])
 
                 for k in ("targets", "outputs"):
-                    iter_train_records[k].append(iter_info[k].to("cpu")) 
+                    iter_train_records[k].append(iter_info[k].detach().to("cpu")) 
 
                 if self.scheduler is not None:
                     self.scheduler.step_update(self.epoch * num_steps + self.idx)
@@ -77,7 +77,7 @@ class Trainer:
             self.call_hooks("after_test_iter")
 
             iter_test_records["targets"].append(y.to("cpu"))
-            iter_test_records["outputs"].append(pred.detach.to("cpu"))
+            iter_test_records["outputs"].append(pred.to("cpu"))
             iter_test_records["loss"].append(self.loss_fn(pred, y).item())
 
         test_metric_dict=self.evaluator.calculate(iter_test_records)

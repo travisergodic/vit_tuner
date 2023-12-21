@@ -54,11 +54,11 @@ scheduler_cfg={
 
 metric_cfg_list=[
     dict(type="Accuracy", tag="expansion_acc", gt_col="label_expansion", pred_col="pred_expansion"),
-    dict(type="AUC", tag="expansion_auc", multi_class="ovo", labels=[0, 1, 2, 3, 4, 5], gt_col="label_expansion", prob_col="prob_expansion"),
-    dict(type="Accuracy", tag="icm_acc", gt_col="label_icm", pred_col="pred_icm"),
-    dict(type="AUC", tag="icm_auc", multi_class="ovo", labels=[0, 1, 2], gt_col="label_icm", prob_col="prob_icm"),
-    dict(type="Accuracy", tag="te_acc", gt_col="label_te", pred_col="pred_te"),
-    dict(type="AUC", tag="te_auc", multi_class="ovo", labels=[0, 1, 2], gt_col="label_te", prob_col="prob_te"),
+    # dict(type="AUC", tag="expansion_auc", multi_class="ovo", labels=[0, 1, 2, 3, 4, 5], gt_col="label_expansion", prob_col="prob_expansion"),
+    dict(type="Accuracy", tag="icm_acc", gt_col="label_ICM", pred_col="pred_ICM"),
+    # dict(type="AUC", tag="icm_auc", multi_class="ovo", labels=[0, 1, 2], gt_col="label_icm", prob_col="prob_icm"),
+    dict(type="Accuracy", tag="te_acc", gt_col="label_TE", pred_col="pred_TE"),
+    # dict(type="AUC", tag="te_auc", multi_class="ovo", labels=[0, 1, 2], gt_col="label_te", prob_col="prob_te"),
 ]
 
 

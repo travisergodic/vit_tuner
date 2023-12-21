@@ -1,5 +1,6 @@
 import torch.nn as nn
 from tensordict import TensorDict
+from timm.models.layers import trunc_normal_
 
 from src.registry import HEAD
 
@@ -12,6 +13,7 @@ class SingleOutputHead(nn.Module):
         self.out_feature = out_features
         self.linear_layer = nn.Linear(in_features, out_features)
         self.dropout_layer = nn.Dropout(p=dropout)
+        trunc_normal_(self.linear_layer.weight, std=2e-5)
 
     def forward(self, X):
         return self.linear_layer(self.dropout_layer(X))
@@ -28,9 +30,12 @@ class MultiOutputHead(nn.Module):
             nn.Linear(self.in_features, out_features) for out_features in self.out_features_list
         ])
         self.dropout_layer = nn.Dropout(p=dropout)
+        for linear_layer in self.linear_layers:
+            trunc_normal_(linear_layer.weight, std=2e-5)
         
     def forward(self, X):
         X = self.dropout_layer(X) 
         return TensorDict(
             {task_name:linear_layer(X) for task_name, linear_layer in zip(self.task_names, self.linear_layers)}, batch_size=X.size(0)    
         )
+    
