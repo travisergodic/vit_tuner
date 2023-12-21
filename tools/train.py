@@ -10,7 +10,7 @@ import pandas as pd
 from src.logger_helper import setup_logger
 from src.trainer import Trainer
 from src.model import build_model
-from src.dataset import DATASET
+from src.dataset import DATASET, multitask_collate_fn
 from src.iter import ITERATION
 from src.loss import LOSS
 from src.optim import OPTIMIZER, SCHEDULER, LR_ASSIGNER
@@ -29,8 +29,7 @@ def main():
         df = df.loc[:500, :].copy()
 
     # dataset
-    dataset_type="single_task" if isinstance(args.y_col, str) else "multi_task"
-
+    dataset_type="single_task" if len(args.y_col) == 1 else "multi_task"
     train_dataset=DATASET.build(
         type=dataset_type, df=df.loc[df[args.split_col]=="train", :].reset_index(), filename_col="filename", 
         y_col=args.y_col, image_dir=args.image_dir, image_transform=train_transform
@@ -49,7 +48,8 @@ def main():
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=args.bs * 2, shuffle=False, 
-        num_workers=args.num_workers, pin_memory=True
+        num_workers=args.num_workers, pin_memory=True,
+        collate_fn=(multitask_collate_fn if len(args.y_col) > 1 else None)
     )
 
     # model

@@ -28,5 +28,4 @@ class ClassificationModel(nn.Module):
     def forward(self, X):
         X = self.backbone(X)
         X = self.head(X)
-        print(type(X["expansion"]))
         return X

@@ -1,4 +1,5 @@
 import torch.nn as nn
+from tensordict import TensorDict
 
 from src.registry import HEAD
 
@@ -29,7 +30,7 @@ class MultiOutputHead(nn.Module):
         self.dropout_layer = nn.Dropout(p=dropout)
         
     def forward(self, X):
-        X = self.dropout_layer(X)
-        return {
-            task_name:linear_layer(X) for task_name, linear_layer in zip(self.task_names, self.linear_layers) 
-        }
+        X = self.dropout_layer(X) 
+        return TensorDict(
+            {task_name:linear_layer(X) for task_name, linear_layer in zip(self.task_names, self.linear_layers)}, batch_size=X.size(0)    
+        )

@@ -1,6 +1,8 @@
 import os
 
+import torch
 from PIL import Image
+from tensordict import TensorDict
 from torch.utils.data import Dataset
 
 from src.registry import DATASET
@@ -54,3 +56,14 @@ class MultiTaskDataset(Dataset):
 
     def __len__(self):
         return len(self.df)
+    
+
+def multitask_collate_fn(batch):
+    data = torch.stack([item["data"] for item in batch])
+    names = [item["name"] for item in batch]
+    targets=TensorDict(
+        {
+            task: torch.tensor([ele[task] for ele in batch["target"]]) for task in batch["targets"].keys()
+        }, batch_size=len(names)
+    )
+    return {"data": data, "targets": targets, "name": names}

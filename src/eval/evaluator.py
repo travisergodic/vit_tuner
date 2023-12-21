@@ -1,5 +1,6 @@
 import logging
 
+import torch
 import numpy as np
 import pandas as pd
 
@@ -18,8 +19,8 @@ class SingleTaskEvaluator:
     def calculate(self, iter_records):
         eval_df=pd.DataFrame(
             {
-                "outputs": np.concatenate(iter_records["outputs"], axis=0),
-                "targets": np.concatenate(iter_records["targets"], axis=0),
+                "outputs": torch.concat(iter_records["outputs"], dim=0).numpy(),
+                "targets": torch.concat(iter_records["targets"], dim=0).numpy(),
                 "losses": np.array(iter_records["loss"])
             }
         )
@@ -37,9 +38,9 @@ class MultiTaskEvaluator:
         task_names=self._get_task_names(iter_records)
         eval_df=pd.DataFrame(
             {
-                **{f"prob_{name}": np.concatenate([ele[name] for ele in iter_records["outputs"]]) for name in task_names},
-                **{f"label_{name}": np.concatenate([ele[name] for ele in iter_records["targets"]]) for name in task_names},
-                **{f"pred_{name}": np.concatenate([ele[name] for ele in iter_records["outputs"]]).argmax(axis=1) for name in task_names},
+                **{f"prob_{name}": torch.concat([ele[name] for ele in iter_records["outputs"]], dim=0).numpy() for name in task_names},
+                **{f"label_{name}": torch.concat([ele[name] for ele in iter_records["targets"]], dim=0).numpy() for name in task_names},
+                **{f"pred_{name}": torch.concat([ele[name] for ele in iter_records["outputs"]], dim=0).numpy().argmax(axis=1) for name in task_names},
                 "losses": np.array(iter_records["loss"])
             }
         )

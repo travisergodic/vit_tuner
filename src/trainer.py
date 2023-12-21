@@ -4,23 +4,12 @@ from tqdm import tqdm
 from collections import defaultdict
 
 import torch
+from tensordict import TensorDict
 
 from src.hooks import HOOKS
 
+
 logger = logging.getLogger(__name__)
-
-    
-def to_device(x, device):
-    if isinstance(x, dict):
-        return {k: v.to(device) for k, v in x.items()}
-    else:
-        return x.to(device)
-
-def to_numpy(x):
-    if isinstance(x, dict):
-        return {k: v.to("cpu").detach().numpy() for k, v in x.items()}
-    else:
-        return x.to("cpu").detach().numpy()
 
 
 class Trainer:
@@ -48,7 +37,10 @@ class Trainer:
             iter_train_records = defaultdict(list)
             
             for self.idx, batch in enumerate(pbar):
-                X, y = to_device(batch["data"], self.device), to_device(batch["targets"], self.device)
+                X, y = batch["data"], batch["targets"]
+                if isinstance(y, dict):
+                    y = TensorDict(y, batch_size=X.size(0)) 
+                X, y = X.to(self.device), y.to(self.device)
                 self.call_hooks("before_train_iter")
                 iter_info = self.iteration.run_iter(self, X, y)
                 self.call_hooks("after_train_iter")
@@ -56,10 +48,7 @@ class Trainer:
                 pbar.set_postfix(loss=iter_info["loss"])
 
                 for k in ("targets", "outputs"):
-                    iter_train_records[k].append(to_numpy(iter_info[k])) 
-                     
-                # for k, v in iter_info.items():
-                #     iter_train_records[k].append(to_device(v, "cpu").numpy())
+                    iter_train_records[k].append(iter_info[k].to("cpu")) 
 
                 if self.scheduler is not None:
                     self.scheduler.step_update(self.epoch * num_steps + self.idx)
@@ -82,14 +71,14 @@ class Trainer:
 
         iter_test_records = defaultdict(list)
         for batch in tqdm(test_loader):
-            X, y = to_device(batch["data"], self.device), to_device(batch["targets"], self.device)
+            X, y = batch["data"].to(self.device), batch["target"].to(self.device)
             self.call_hooks("before_test_iter")
             pred = self.model(X)
             self.call_hooks("after_test_iter")
 
-            iter_test_records["targets"].append(to_numpy(y, "cpu"))
-            iter_test_records["outputs"].append(to_numpy(pred, "cpu"))
-            iter_test_records["loss"].append([self.loss_fn(pred, y).item()])
+            iter_test_records["targets"].append(y.to("cpu"))
+            iter_test_records["outputs"].append(pred.detach.to("cpu"))
+            iter_test_records["loss"].append(self.loss_fn(pred, y).item())
 
         test_metric_dict=self.evaluator.calculate(iter_test_records)
         test_metric_dict["epoch"]=self.epoch
@@ -110,5 +99,4 @@ class Trainer:
 
         for hook_cfg in itertools.chain(default_hook_cfg_list, hook_cfg_list):
             self._hooks.append(HOOKS.build(**hook_cfg))
-
         self._hooks.sort(key=lambda x: x.priority, reverse=True)

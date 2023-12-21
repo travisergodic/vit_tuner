@@ -10,9 +10,6 @@ class CrossEntropyLoss(nn.Module):
         self.loss_fn = nn.CrossEntropyLoss(**kwargs)
 
     def forward(self, y_pred, y_true):
-        print(y_true)
-        print(y_pred.shape)
-
         return self.loss_fn(y_pred, y_true)
 
 
