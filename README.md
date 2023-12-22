@@ -1,7 +1,7 @@
 ## TODO
-1. accumulate iteration
-2. truncate normal
-3. clip gradient
-4. skip list
-5. skip keywords
+1. v accumulate iteration
+2. v truncate normal
+3. v clip gradient
+4. v skip list
+5. v skip keywords
 6. ema
