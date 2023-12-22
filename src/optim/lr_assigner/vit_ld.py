@@ -82,13 +82,14 @@ def check_keywords_in_name(name, keywords=()):
 
 class LayerwiseDecayAssigner:
     get_layer_func=None
-    def __init__(self, weight_decay, layer_decay, skip_list=(), skip_keywords=()):
+    def __init__(self, base_lr, weight_decay, layer_decay, skip_list=(), skip_keywords=()):
         """
         skip_list (_type_): 
             mae --> model.no_weight_decay()
             fd --> model.no_weight_decay(), model.no_weight_decay_keywords()
             ft-clip --> model.no_weight_decay(), disable weight decay on rel_pos_bias  
         """
+        self.base_lr=base_lr
         self.weight_decay=weight_decay
         self.layer_decay=layer_decay
         self.skip_list=skip_list
@@ -132,12 +133,14 @@ class LayerwiseDecayAssigner:
                 parameter_group_names[group_name] = {
                     "weight_decay": this_weight_decay,
                     "params": [],
-                    "lr_scale": scale
+                    "lr_scale": scale,
+                    "lr": scale * self.base_lr
                 }
                 parameter_group_vars[group_name] = {
                     "weight_decay": this_weight_decay,
                     "params": [],
-                    "lr_scale": scale
+                    "lr_scale": scale,
+                    "lr": scale * self.base_lr
                 }
 
             parameter_group_vars[group_name]["params"].append(param)
@@ -147,13 +150,15 @@ class LayerwiseDecayAssigner:
         # head
         parameter_group_names["head"] = {
             "weight_decay": this_weight_decay, "params": [],
-            "lr_scale": scale
+            "lr_scale": 1,
+            "lr": self.base_lr
         }
 
         parameter_group_vars["head"] = {
             "weight_decay": this_weight_decay,
             "params": [],
-            "lr_scale": scale
+            "lr_scale": scale,
+            "lr": self.base_lr
         }
 
         for name, param in head.named_parameters():

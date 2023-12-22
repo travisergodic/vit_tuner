@@ -946,7 +946,7 @@ def SWIN_V2(pretrained=None):
     cfg={
         "img_size": 224, "patch_size": 4, "in_chans": 3, "num_classes": 0, "embed_dim": 128, "depths": [2, 2, 18, 2],
         "num_heads": [4, 8, 16, 32], "window_size": 14, "mlp_ratio": 4.0, "qkv_bias": True, "qk_scale": None,  "drop_rate": 0,
-        "drop_path_rate": 0.3, "ape": False, "patch_norm": True, "use_checkpoint": False, "relative_coords_table_type": "norm8_log", 
+        "drop_path_rate": 0.4, "ape": False, "patch_norm": True, "use_checkpoint": False, "relative_coords_table_type": "norm8_log", 
         "use_shared_rel_pos_bias": False, "checkpoint_blocks": [0,0,0,0]
     }
     model=SwinTransformerV2(**cfg)

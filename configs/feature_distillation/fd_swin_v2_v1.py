@@ -1,3 +1,6 @@
+embed_dim=128
+depths=[2, 2, 6, 2]
+
 batch_size=128
 num_device=16
 n_epoch=100
@@ -5,7 +8,7 @@ n_epoch=100
 
 head_cfg = {
     "type": "multi_output", 
-    "in_features": 768, 
+    "in_features": int(embed_dim * 2 ** (len(depths) - 1)), 
     "out_features_list": [6, 3, 3],
     "task_names": ["expansion", "ICM", "TE"], 
     "dropout": 0.0
@@ -13,7 +16,7 @@ head_cfg = {
 
 backbone_cfg = {
     "type": "fd_clip_B16",
-    "pretrained": "./weights/clip_300ep.pth"
+    "pretrained": "./weights/esvit_300ep.pth"
 }
 
 
@@ -41,11 +44,12 @@ loss_cfg = {
 }
 
 lr_assigner_cfg={
-    "base_lr": 1.25e-3, 
+    "base_lr": 1.25e-3,  
     "type": "fd_vit_ld",
     "weight_decay": 0.05,
-    "layer_decay": 0.65,
-    "skip_list": {"pos_embed", "cls_token"}
+    "layer_decay": 0.8,
+    "skip_list": {'absolute_pos_embed'},
+    "skip_keywords": {"rpe_mlp", "logit_scale", 'relative_position_bias_table'} # {"logit_scale"}
 }
 
 

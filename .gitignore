@@ -5,3 +5,4 @@ tests/*
 weights/*
 test.py
 scripts/*.sh
+.DS_Store

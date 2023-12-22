@@ -420,7 +420,7 @@ def CLIP_B16(pretrained=None):
 def CLIP_L14(pretrained=None):
     cfg={
         "img_size": 224, "patch_size": 14, "in_chans": 3, "num_classes": 0, "embed_dim": 1024, "depth": 24, "num_heads": 16,
-        "mlp_ratio": 4, "qkv_bias": True, "with_k_bias": False,  "drop_rate": 0.0, "drop_path_rate": 0.3, "norm_layer": partial(nn.LayerNorm, eps=1e-6),
+        "mlp_ratio": 4, "qkv_bias": True, "with_k_bias": False,  "drop_rate": 0.0, "drop_path_rate": 0.1, "norm_layer": partial(nn.LayerNorm, eps=1e-6),
         "init_values": 0.1, "use_abs_pos_emb": False, "use_rel_pos_bias": False,  "use_shared_rel_pos_bias": True, 
         "with_cls_token": True, "use_checkpoint": False, 
     }

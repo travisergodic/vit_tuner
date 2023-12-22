@@ -43,13 +43,13 @@ def main():
     # dataloader
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.bs, shuffle=True, 
-        num_workers=args.num_workers, pin_memory=True,
+        num_workers=args.num_workers, pin_memory=False,
         collate_fn=(multitask_collate_fn if len(args.y_col) > 1 else None)
     )
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=args.bs * 2, shuffle=False, 
-        num_workers=args.num_workers, pin_memory=True,
+        num_workers=args.num_workers, pin_memory=False,
         collate_fn=(multitask_collate_fn if len(args.y_col) > 1 else None)
     )
 
@@ -66,14 +66,14 @@ def main():
     if args.optim:
         config.optimizer_cfg["type"] = args.optim
 
-    if args.lr:
-        config.optimizer_cfg["lr"] = args.lr
-
     if args.weight_decay:
         config.optimizer_cfg["weight_decay"] = args.weight_decay
 
     # lr assigner
     lr_assigner=LR_ASSIGNER.build(**config.lr_assigner_cfg)
+
+    if args.lr:
+        config.lr_assigner_cfg["lr"] = args.lr
 
     optimizer = OPTIMIZER.build(
         params=lr_assigner.get_params(model), **config.optimizer_cfg
