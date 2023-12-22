@@ -7,6 +7,7 @@ from torch.utils.checkpoint import checkpoint_sequential
 from timm.models.layers import drop_path, to_2tuple, trunc_normal_
 
 from src.registry import BACKBONE
+from .load import load
 
 
 global LAYER_NORM 
@@ -167,7 +168,7 @@ class VisualTransformer(nn.Module):
 
         init_scale = 0.001
         self.fc_norm = LayerNorm(width)
-        self.head = nn.Linear(width, 1000)
+        self.head = nn.Identity() # nn.Linear(width, 1000)
         trunc_normal_(self.head.weight, std=.02)
 
         self.head.weight.data.mul_(init_scale)
@@ -235,7 +236,7 @@ class VisualTransformer(nn.Module):
 
 
 @BACKBONE.register("ft_clip_B16")
-def CLIP_B16(pretrained=False, **kwargs):
+def CLIP_B16(pretrained=True, **kwargs):
     vision_width = 768
     vision_layers = 12
     vision_heads = vision_width // 64
@@ -251,11 +252,13 @@ def CLIP_B16(pretrained=False, **kwargs):
         'checkpoint': False,
     }
     model = VisualTransformer(**default_kwargs)
+    if pretrained:
+        load("CLIP_B16", model, model_prefix="visual.") 
     return model
 
 
 @BACKBONE.register("ft_clip_B16_384")
-def CLIP_B16_384(pretrained=False, **kwargs):
+def CLIP_B16_384(pretrained=True, **kwargs):
     vision_width = 768
     vision_layers = 12
     vision_heads = vision_width // 64
@@ -272,11 +275,13 @@ def CLIP_B16_384(pretrained=False, **kwargs):
         'freeze_conv1': False,
     }
     model = VisualTransformer(**default_kwargs)
+    if pretrained:
+        load("CLIP_B16", model, model_prefix="visual.")
     return model
 
 
 @BACKBONE.register("ft_clip_L14")
-def CLIP_L14(pretrained=False, **kwargs):
+def CLIP_L14(pretrained=True, **kwargs):
     vision_width = 1024
     vision_layers = 24
     vision_heads = vision_width // 64
@@ -292,6 +297,8 @@ def CLIP_L14(pretrained=False, **kwargs):
         'checkpoint': False,
     }
     model = VisualTransformer(**default_kwargs)
+    if pretrained:
+        load("CLIP_B16", model, model_prefix="visual.")
     return model
 
 
@@ -313,4 +320,6 @@ def CLIP_L14_336(pretrained=False, **kwargs):
         'freeze_conv1': False,
     }
     model = VisualTransformer(**default_kwargs)
+    if pretrained:
+        load("CLIP_L14", model, model_prefix="visual.")
     return model

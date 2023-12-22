@@ -61,7 +61,6 @@ def load(model_type, model, model_prefix="visual."):
                 pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(1, 2)
                 new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
                 checkpoint_model['positional_embedding'] = new_pos_embed.squeeze(0)
-
     load_state_dict(model, checkpoint_model, prefix=model_prefix)
 
 
