@@ -26,7 +26,7 @@ def main():
     df = pd.read_csv(args.csv_path)
 
     if args.debug: 
-        df = df.loc[:500, :].copy()
+        df = df.loc[:200, :].copy()
 
     # dataset
     dataset_type="single_task" if len(args.y_col) == 1 else "multi_task"

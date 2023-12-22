@@ -27,7 +27,7 @@ class SingleTaskDataset(Dataset):
         if self.image_transform is not None:
             image = self.image_transform(image)
 
-        return {"data": image, "targets": label, "name": os.path.basename(image_path)}
+        return {"data": image, "target": label, "name": os.path.basename(image_path)}
 
     def __len__(self):
         return len(self.df)
@@ -52,18 +52,17 @@ class MultiTaskDataset(Dataset):
         if self.image_transform is not None:
             image = self.image_transform(image)
 
-        return {"data": image, "targets": label, "name": os.path.basename(image_path)}
+        return {"data": image, "target": label, "name": os.path.basename(image_path)}
 
     def __len__(self):
         return len(self.df)
     
 
 def multitask_collate_fn(batch):
-    data = torch.stack([item["data"] for item in batch])
+    data = torch.stack([ele["data"] for ele in batch])
     names = [item["name"] for item in batch]
+    tasks = batch[0]["target"].keys()
     targets=TensorDict(
-        {
-            task: torch.tensor([ele[task] for ele in batch["target"]]) for task in batch["targets"].keys()
-        }, batch_size=len(names)
+        {task: torch.tensor([ele["target"][task] for ele in batch]) for task in tasks}, batch_size=len(names)
     )
-    return {"data": data, "targets": targets, "name": names}
+    return {"data": data, "target": targets, "name": names}

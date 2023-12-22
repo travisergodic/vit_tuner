@@ -37,7 +37,7 @@ class Trainer:
             iter_train_records = defaultdict(list)
             
             for self.idx, batch in enumerate(pbar):
-                X, y = batch["data"], batch["targets"]
+                X, y = batch["data"], batch["target"]
                 if isinstance(y, dict):
                     y = TensorDict(y, batch_size=X.size(0)) 
                 X, y = X.to(self.device), y.to(self.device)
@@ -47,7 +47,7 @@ class Trainer:
 
                 pbar.set_postfix(loss=iter_info["loss"])
 
-                for k in ("targets", "outputs"):
+                for k in ("target", "output"):
                     iter_train_records[k].append(iter_info[k].detach().to("cpu")) 
 
                 if self.scheduler is not None:
@@ -76,8 +76,8 @@ class Trainer:
             pred = self.model(X)
             self.call_hooks("after_test_iter")
 
-            iter_test_records["targets"].append(y.to("cpu"))
-            iter_test_records["outputs"].append(pred.to("cpu"))
+            iter_test_records["target"].append(y.to("cpu"))
+            iter_test_records["output"].append(pred.to("cpu"))
             iter_test_records["loss"].append(self.loss_fn(pred, y).item())
 
         test_metric_dict=self.evaluator.calculate(iter_test_records)

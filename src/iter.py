@@ -60,6 +60,6 @@ class NormalIteration:
             self._scaler.step(trainer.optimizer)
             self._scaler.update()
         return dict(
-            loss=loss.item(), grad_norm=grad_norm, targets=y, 
-            outputs=pred, loss_scale=self._scaler.get_scale()
+            loss=loss.item(), grad_norm=grad_norm, target=y, 
+            output=pred, loss_scale=self._scaler.get_scale()
         )
