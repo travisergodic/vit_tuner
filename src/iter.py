@@ -41,12 +41,12 @@ class NormalIteration:
                     self._scaler.unscale_(trainer.optimizer)
                     grad_norm=torch.nn.utils.clip_grad_norm_(trainer.model.parameters(), self.clip_grad)
                 else:
-                    grad_norm=get_grad_norm(trainer.model.parameter())
+                    grad_norm=get_grad_norm(trainer.model.parameters())
                 self._scaler.step(trainer.optimizer)
                 trainer.optimizer.zero_grad()
                 self._scaler.update()
             else:
-                grad_norm=get_grad_norm(trainer.model.parameter())
+                grad_norm=get_grad_norm(trainer.model.parameters())
 
         else:
             loss = trainer.loss_fn(pred, y)
