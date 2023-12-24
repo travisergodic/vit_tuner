@@ -21,7 +21,7 @@ class SingleTaskEvaluator:
             {
                 "prob": list(torch.concat(iter_records["output"], dim=0).numpy()),
                 "label": torch.concat(iter_records["target"], dim=0).numpy(),
-                "pred": torch.concat(iter_records["target"], dim=0).numpy().argmax(axis=1),
+                "pred": torch.concat(iter_records["output"], dim=0).numpy().argmax(axis=1),
             }
         )
         metric_dict={str(metric): metric(eval_df) for metric in self.metrics}

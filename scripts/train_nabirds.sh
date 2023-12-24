@@ -1,4 +1,4 @@
-config_file=./configs/feautre_distillation/_fd_vit_base.py
+config_file=./configs/feature_distillation/_fd_vit_base_single.py
 exp_name=fd_vit_base_v1
 csv_path=/content/nabirds.csv
 image_dir=/content/hpdh/nabirds/images
@@ -24,7 +24,6 @@ python tools/train.py --config_file ${config_file} \
                       --lr ${lr} \
                       --optim ${optim} \
                       --weight_decay ${weight_decay} \
-                      --weight ${weight} \
                       --device ${device} \
                       --num_workers ${num_workers} \
                       --debug

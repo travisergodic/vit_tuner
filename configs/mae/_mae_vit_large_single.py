@@ -27,15 +27,7 @@ iter_cfg={
 }
 
 
-loss_cfg = {
-    "type": "multi_task", 
-    "task_to_loss_cfg": {
-        "expansion": dict(type="cross_entropy"),
-        "ICM": dict(type="cross_entropy"),
-        "TE": dict(type="cross_entropy"),
-    }, 
-    "task_to_weight": [1., 1., 1.]
-}
+loss_cfg ={"type": "cross_entropy"}
 
 lr_assigner_cfg={
     "base_lr": 1e-3,  
