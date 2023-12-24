@@ -19,9 +19,9 @@ class SingleTaskEvaluator:
     def calculate(self, iter_records):
         eval_df=pd.DataFrame(
             {
-                "output": torch.concat(iter_records["output"], dim=0).numpy(),
-                "target": torch.concat(iter_records["target"], dim=0).numpy(),
-                # "loss": np.array(iter_records["loss"])
+                "prob": list(torch.concat(iter_records["output"], dim=0).numpy()),
+                "label": torch.concat(iter_records["target"], dim=0).numpy(),
+                "pred": torch.concat(iter_records["target"], dim=0).numpy().argmax(axis=1),
             }
         )
         metric_dict={str(metric): metric(eval_df) for metric in self.metrics}
