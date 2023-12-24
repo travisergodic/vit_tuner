@@ -43,7 +43,7 @@ lr_assigner_cfg={
     "type": "fd_vit_ld",
     "weight_decay": 0.05,
     "layer_decay": 0.6,
-    "skip_list": {"pos_embed", "cls_token"}
+    # "skip_list": {"pos_embed", "cls_token"}
 }
 
 

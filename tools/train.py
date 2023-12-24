@@ -123,6 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("--y_col", type=str, nargs='+', default=["expansion", "ICM", "TE"])
     parser.add_argument("--bs", type=int, default=16)
     parser.add_argument("--lr", type=float)
+    parser.add_argument("--n_classes", type=int)
     parser.add_argument("--optim", type=str, choices=["Adam", "SGD", "AdamW"])
     parser.add_argument("--weight_decay", type=float, default=1e-2)
     parser.add_argument("--weight", type=str, default=None)
