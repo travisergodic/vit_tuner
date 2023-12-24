@@ -4,5 +4,5 @@ checkpoints/*
 tests/*
 weights/*
 test.py
-scripts/*.sh
+scripts/train.sh
 .DS_Store
