@@ -11,6 +11,7 @@ optim=AdamW
 weight_decay=0.05
 device=cuda
 num_workers=2
+eval_freq=3
 
 
 python tools/train.py --config_file ${config_file} \
@@ -26,4 +27,4 @@ python tools/train.py --config_file ${config_file} \
                       --weight_decay ${weight_decay} \
                       --device ${device} \
                       --num_workers ${num_workers} \
-                      --debug
+                      --eval_freq ${eval_freq}

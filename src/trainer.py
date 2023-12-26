@@ -60,7 +60,7 @@ class Trainer:
 
             train_metric_dict=self.evaluator_dict["train"].calculate(iter_train_records)
             train_metric_dict["epoch"] = self.epoch
-            train_metric_dict["loss"] = self.loss_average_meter.avg
+            train_metric_dict["loss"] = loss_meter.avg
             self.epoch_train_records.append(train_metric_dict)
             self.call_hooks("after_train_epoch")
 

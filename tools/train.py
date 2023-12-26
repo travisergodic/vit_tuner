@@ -96,8 +96,8 @@ def main():
     # build trainer
     trainer = Trainer(
         model=model, iteration=iteration, optimizer=optimizer, scheduler=scheduler,
-        loss_fn=loss_fn, evaluator=evaluator_dict, device=args.device, n_epochs=args.n_epochs,
-        checkpoint_dir=f"./checkpoints/{args.exp_name}"
+        loss_fn=loss_fn, evaluator_dict=evaluator_dict, device=args.device, n_epochs=args.n_epochs,
+        checkpoint_dir=f"./checkpoints/{args.exp_name}", eval_freq=args.eval_freq
     )
     # train model
     trainer.train(train_loader, test_loader)
@@ -129,6 +129,7 @@ if __name__ == "__main__":
     parser.add_argument("--weight", type=str, default=None)
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--num_workers", type=int, default=4)
+    parser.add_argument("--eval_freq", type=int, default=1)
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     config = get_cfg_by_file(args.config_file)

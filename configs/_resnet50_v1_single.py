@@ -1,7 +1,7 @@
 head_cfg = {
     "type": "single_output", 
     "in_features": 2048, 
-    "out_features_list": 555,
+    "out_features": 555,
     "dropout": 0.0
 }
 

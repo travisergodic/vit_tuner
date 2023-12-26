@@ -56,7 +56,6 @@ class CheckpointHook:
         self._top_k_epoch.append(trainer.epoch)
         torch.save(trainer.model.state_dict(), os.path.join(trainer.checkpoint_dir, checkpoint_file))
         logger.info(f"save checkpoint file: {checkpoint_file}")
-        
 
         if self.save_last and (trainer.epoch + 1) % self.interval == 0:
             torch.save(trainer.model.state_dict(), os.path.join(trainer.checkpoint_dir, "last.pt"))
