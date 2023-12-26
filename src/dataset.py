@@ -22,7 +22,7 @@ class SingleTaskDataset(Dataset):
         label = int(self.df.loc[index, self.y_col[0]])
 
         image_path = os.path.join(self.image_dir, self.df.loc[index, self.filename_col])
-        image = Image.open(image_path).convert("L").convert("RGB")
+        image = Image.open(image_path).convert("RGB")
         
         if self.image_transform is not None:
             image = self.image_transform(image)
