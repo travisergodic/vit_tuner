@@ -56,6 +56,10 @@ metric_cfg_list=[
 ]
 
 
-evaluator_cfg={
+train_evaluator_cfg={
+    "type": "single_task", "metric_cfg_list": metric_cfg_list
+}
+
+test_evaluator_cfg={
     "type": "single_task", "metric_cfg_list": metric_cfg_list
 }

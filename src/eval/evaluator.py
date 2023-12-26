@@ -22,6 +22,7 @@ class SingleTaskEvaluator:
                 "prob": list(torch.concat(iter_records["output"], dim=0).numpy()),
                 "label": torch.concat(iter_records["target"], dim=0).numpy(),
                 "pred": torch.concat(iter_records["output"], dim=0).numpy().argmax(axis=1),
+
             }
         )
         metric_dict={str(metric): metric(eval_df) for metric in self.metrics}
@@ -42,7 +43,6 @@ class MultiTaskEvaluator:
                 **{f"prob_{name}": list(torch.concat([ele[name] for ele in iter_records["output"]], dim=0)) for name in task_names},
                 **{f"label_{name}": torch.concat([ele[name] for ele in iter_records["target"]], dim=0).numpy() for name in task_names},
                 **{f"pred_{name}": torch.concat([ele[name] for ele in iter_records["output"]], dim=0).numpy().argmax(axis=1) for name in task_names},
-                # "losses": np.array(iter_records["loss"])
             }
         )
         metric_dict={str(metric): metric(eval_df) for metric in self.metrics}

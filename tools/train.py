@@ -60,7 +60,7 @@ def main():
     loss_fn = LOSS.build(**config.loss_cfg)
 
     # evaluator
-    evaluator = EVALUATOR.build(**config.evaluator_cfg)
+    evaluator_dict = {k: EVALUATOR.build(**getattr(config, f"{k}_evaluator_cfg")) for k in ("train", "test")}
 
     # optimizer
     if args.optim:
@@ -96,7 +96,7 @@ def main():
     # build trainer
     trainer = Trainer(
         model=model, iteration=iteration, optimizer=optimizer, scheduler=scheduler,
-        loss_fn=loss_fn, evaluator=evaluator, device=args.device, n_epochs=args.n_epochs,
+        loss_fn=loss_fn, evaluator=evaluator_dict, device=args.device, n_epochs=args.n_epochs,
         checkpoint_dir=f"./checkpoints/{args.exp_name}"
     )
     # train model

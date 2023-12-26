@@ -1,5 +1,5 @@
-config_file=./configs/_resnet50_v1_single.py
-exp_name=resnet50_v1
+config_file=./configs/feature_distillation/_fd_vit_base_single.py
+exp_name=fd_vit_base_v1
 csv_path=/content/nabirds.csv
 image_dir=/content/hpdh/nabirds/images
 split_col=split

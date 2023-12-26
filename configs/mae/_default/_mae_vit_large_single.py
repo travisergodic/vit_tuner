@@ -4,7 +4,7 @@ batch_size=1024
 head_cfg = {
     "type": "single_output", 
     "in_features": 1024, 
-    "out_features_list": 555,
+    "out_features": 555,
     "dropout": 0.0
 }
 
@@ -55,6 +55,10 @@ metric_cfg_list=[
 ]
 
 
-evaluator_cfg={
+train_evaluator_cfg={
+    "type": "single_task", "metric_cfg_list": metric_cfg_list
+}
+
+test_evaluator_cfg={
     "type": "single_task", "metric_cfg_list": metric_cfg_list
 }

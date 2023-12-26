@@ -5,6 +5,8 @@ from collections import defaultdict
 
 import torch
 from tensordict import TensorDict
+from timm.utils import AverageMeter
+
 
 from src.hooks import HOOKS
 
@@ -13,19 +15,20 @@ logger = logging.getLogger(__name__)
 
 
 class Trainer:
-    def __init__(self, model, iteration, optimizer, scheduler, loss_fn, evaluator, device, n_epochs, checkpoint_dir):
+    def __init__(self, model, iteration, optimizer, scheduler, loss_fn, evaluator_dict, device, n_epochs, checkpoint_dir, eval_freq=1):
         self.device = device
         self.model = model.to(self.device)
-        self.evaluator = evaluator
+        self.evaluator_dict = evaluator_dict
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.iteration = iteration
         self.loss_fn = loss_fn
         self.n_epochs = n_epochs
         self.checkpoint_dir=checkpoint_dir
+        self.eval_freq = eval_freq
         self.epoch_train_records = []
         self.epoch_test_records = []
-        self._hooks = [] 
+        self._hooks = []
 
     def train(self, train_loader, test_loader=None):
         self.call_hooks("before_run")
@@ -33,6 +36,7 @@ class Trainer:
         for self.epoch in range(self.n_epochs): 
             self.model.train()
             pbar = tqdm(train_loader)
+            loss_meter=AverageMeter()
             pbar.set_description(f"Epoch {self.epoch}/{self.n_epochs}") 
             iter_train_records = defaultdict(list)
             
@@ -46,6 +50,7 @@ class Trainer:
                 self.call_hooks("after_train_iter")
 
                 pbar.set_postfix(loss=iter_info["loss"])
+                loss_meter.update(iter_info["loss"], X.size(0))
 
                 for k in ("target", "output"):
                     iter_train_records[k].append(iter_info[k].detach().to("cpu")) 
@@ -53,13 +58,14 @@ class Trainer:
                 if self.scheduler is not None:
                     self.scheduler.step_update(self.epoch * num_steps + self.idx)
 
-            train_metric_dict=self.evaluator.calculate(iter_train_records)
-            train_metric_dict["epoch"]=self.epoch
+            train_metric_dict=self.evaluator_dict["train"].calculate(iter_train_records)
+            train_metric_dict["epoch"] = self.epoch
+            train_metric_dict["loss"] = self.loss_average_meter.avg
             self.epoch_train_records.append(train_metric_dict)
             self.call_hooks("after_train_epoch")
 
             # evaluate
-            if test_loader is not None:
+            if (test_loader is not None) and ((self.epoch + 1) % self.eval_freq == 0):
                 self.test(test_loader)
             self.call_hooks("after_test_epoch")
         self.call_hooks("after_run")
@@ -69,6 +75,7 @@ class Trainer:
         self.model.to(self.device)
         self.model.eval()
 
+        loss_meter = AverageMeter()
         iter_test_records = defaultdict(list)
         for batch in tqdm(test_loader):
             X, y = batch["data"].to(self.device), batch["target"].to(self.device)
@@ -78,10 +85,11 @@ class Trainer:
 
             iter_test_records["target"].append(y.to("cpu"))
             iter_test_records["output"].append(pred.to("cpu"))
-            iter_test_records["loss"].append(self.loss_fn(pred, y).item())
+            loss_meter.update(self.loss_fn(pred, y).item(), X.size(0))
 
-        test_metric_dict=self.evaluator.calculate(iter_test_records)
-        test_metric_dict["epoch"]=self.epoch
+        test_metric_dict=self.evaluator_dict["test"].calculate(iter_test_records)
+        test_metric_dict["epoch"] = self.epoch
+        test_metric_dict["loss"] = loss_meter.avg 
         self.epoch_test_records.append(test_metric_dict)
 
     def call_hooks(self, name):

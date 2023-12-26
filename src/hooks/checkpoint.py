@@ -32,7 +32,7 @@ class CheckpointHook:
             self._top_k_checkpoint=[]
             self._top_k_value=[]
 
-    def save_top_k_checkpoint(self, trainer):
+    def after_test_epoch(self, trainer):
         if (trainer.epoch + 1 < self.save_begin) or (self.top_k <= 0):
             return 
 
