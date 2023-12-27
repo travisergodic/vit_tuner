@@ -99,6 +99,12 @@ def main():
         loss_fn=loss_fn, evaluator_dict=evaluator_dict, device=args.device, n_epochs=args.n_epochs,
         checkpoint_dir=f"./checkpoints/{args.exp_name}", eval_freq=args.eval_freq
     )
+
+    # register hooks
+    if not hasattr(config, "hook_cfg_list"):
+        config.hook_cfg_list = []
+    trainer.register_hooks(config.hook_cfg_list)
+
     # train model
     trainer.train(train_loader, test_loader)
 

@@ -216,7 +216,6 @@ class PatchEmbed(nn.Module):
 
 
 class RelativePositionBias(nn.Module):
-
     def __init__(self, window_size, num_heads, with_cls_token=True):
         super().__init__()
         self.window_size = window_size
@@ -404,12 +403,12 @@ class VisionTransformer(nn.Module):
 
 
 @BACKBONE.register("fd_clip_B16")
-def CLIP_B16(pretrained=None):
+def CLIP_B16(pretrained=True):
     cfg={
         "img_size": 224, "patch_size": 16, "in_chans": 3, "num_classes": 0, "embed_dim": 768, "depth": 12,
         "num_heads": 12, "mlp_ratio": 4, "qkv_bias": True, "with_k_bias": False, "drop_rate": 0.0,
         "drop_path_rate": 0.2, "norm_layer": partial(nn.LayerNorm, eps=1e-6), "init_values": 0.1, "use_abs_pos_emb": False, 
-        "use_rel_pos_bias": False, "use_shared_rel_pos_bias": True, "with_cls_token": True, "use_checkpoint": False, 
+        "use_rel_pos_bias": True, "use_shared_rel_pos_bias": True, "with_cls_token": True, "use_checkpoint": False, 
     }
     model=VisionTransformer(**cfg)
     load_pretrained({**cfg, "pretrained": pretrained, "ft_skip_remap": False, "type": "vit"}, model)

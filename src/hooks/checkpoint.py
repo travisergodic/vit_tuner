@@ -35,6 +35,9 @@ class CheckpointHook:
     def after_test_epoch(self, trainer):
         if (trainer.epoch + 1 < self.save_begin) or (self.top_k <= 0):
             return 
+        
+        if (trainer.epoch + 1) % trainer.eval_freq != 0:
+            return 
 
         Path(trainer.checkpoint_dir).mkdir(exist_ok=True, parents=True)
 
