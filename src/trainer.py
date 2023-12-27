@@ -36,7 +36,6 @@ class Trainer:
         for self.epoch in range(self.n_epochs): 
             self.model.train()
             pbar = tqdm(train_loader)
-            loss_meter=AverageMeter()
             pbar.set_description(f"Epoch {self.epoch}/{self.n_epochs}") 
             iter_train_records = defaultdict(list)
             
@@ -50,17 +49,16 @@ class Trainer:
                 self.call_hooks("after_train_iter")
 
                 pbar.set_postfix(loss=iter_info["loss"])
-                loss_meter.update(iter_info["loss"], X.size(0))
 
                 for k in ("target", "output"):
-                    iter_train_records[k].append(iter_info[k].detach().to("cpu")) 
+                    iter_train_records[k].append(iter_info[k].detach().to("cpu"))
+                iter_train_records["loss"].append(iter_info["loss"])
 
                 if self.scheduler is not None:
                     self.scheduler.step_update(self.epoch * num_steps + self.idx)
 
             train_metric_dict=self.evaluator_dict["train"].calculate(iter_train_records)
             train_metric_dict["epoch"] = self.epoch
-            train_metric_dict["loss"] = loss_meter.avg
             self.epoch_train_records.append(train_metric_dict)
             self.call_hooks("after_train_epoch")
 
@@ -75,7 +73,6 @@ class Trainer:
         self.model.to(self.device)
         self.model.eval()
 
-        loss_meter = AverageMeter()
         iter_test_records = defaultdict(list)
         for batch in tqdm(test_loader):
             X, y = batch["data"].to(self.device), batch["target"].to(self.device)
@@ -85,11 +82,10 @@ class Trainer:
 
             iter_test_records["target"].append(y.to("cpu"))
             iter_test_records["output"].append(pred.to("cpu"))
-            loss_meter.update(self.loss_fn(pred, y).item(), X.size(0))
+            iter_test_records["loss"].append(self.loss_fn(pred, y).item())
 
         test_metric_dict=self.evaluator_dict["test"].calculate(iter_test_records)
-        test_metric_dict["epoch"] = self.epoch
-        test_metric_dict["loss"] = loss_meter.avg 
+        test_metric_dict["epoch"] = self.epoch 
         self.epoch_test_records.append(test_metric_dict)
 
     def call_hooks(self, name):
