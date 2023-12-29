@@ -169,10 +169,10 @@ class VisualTransformer(nn.Module):
         init_scale = 0.001
         self.fc_norm = LayerNorm(width)
         self.head = nn.Identity() # nn.Linear(width, 1000)
-        trunc_normal_(self.head.weight, std=.02)
+        # trunc_normal_(self.head.weight, std=.02)
 
-        self.head.weight.data.mul_(init_scale)
-        self.head.bias.data.mul_(init_scale)
+        # self.head.weight.data.mul_(init_scale)
+        # self.head.bias.data.mul_(init_scale)
 
         nn.init.constant_(self.fc_norm.bias, 0)
         nn.init.constant_(self.fc_norm.weight, 1.0)

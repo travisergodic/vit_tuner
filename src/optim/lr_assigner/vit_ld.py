@@ -103,7 +103,8 @@ class LayerwiseDecayAssigner:
         if isinstance(self.layer_decay, list):
             scales=self.layer_decay
         else: 
-            scales=[self.layer_decay ** i for i in reversed(range(backbone.depth+2))]
+            depth = backbone.depth if hasattr(backbone, "depth") else backbone.layers
+            scales=[self.layer_decay ** i for i in reversed(range(depth+2))]
 
         # backbone
         for name, param in backbone.named_parameters():
@@ -119,7 +120,7 @@ class LayerwiseDecayAssigner:
                 this_weight_decay = self.weight_decay
 
             if self.__class__.get_layer_func is not None:
-                layer_id = self.__class__.get_layer_func(name, num_layers=backbone.depth)
+                layer_id = self.__class__.get_layer_func(name, num_layers=depth)
                 group_name = f"layer_{layer_id}_{group_name}"
             else:
                 layer_id = None

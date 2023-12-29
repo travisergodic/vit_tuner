@@ -90,11 +90,12 @@ class Trainer:
 
     def call_hooks(self, name):
         for hook in self._hooks:
-            getattr(hook, name)(self)
+            if hasattr(hook, name):
+                getattr(hook, name)(self)
 
     def register_hooks(self, hook_cfg_list):
         default_hook_cfg_list=[
-            dict(type='CheckpointHook', top_k=1, monitor="loss", rule="less", save_begin=1),
+            dict(type='checkpoint', top_k=1, monitor="loss", rule="less", save_begin=1),
         ]
 
         for i, default_hook_cfg in enumerate(default_hook_cfg_list):

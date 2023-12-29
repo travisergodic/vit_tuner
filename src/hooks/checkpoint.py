@@ -15,6 +15,7 @@ logger=logging.getLogger(__name__)
 
 @HOOKS.register("checkpoint")
 class CheckpointHook:
+    priority = 100
     rule_pick = {"greater": np.argmin, "less": np.argmax}
     rule_map = {"greater": lambda x, y: x > y, "less": lambda x, y: x < y}
     best_save_fmt="best_e{epoch}-{value:.4f}.pt"
@@ -23,7 +24,7 @@ class CheckpointHook:
     def __init__(self, top_k, monitor, rule, save_begin=10, interval=5, save_last=True):
         self.top_k=top_k
         self.monitor=monitor
-        self.iterval=interval
+        self.interval=interval
         self.rule=rule
         self.save_begin=save_begin
         self.save_last=save_last
@@ -43,7 +44,7 @@ class CheckpointHook:
 
         if len(self._top_k_checkpoint) >= self.top_k:
             idx = self.rule_pick[self.rule](self._top_k_value)
-            if self.rule_map(trainer.epoch_train_records[-1][self.monitor], self._top_k_value[idx]):
+            if self.rule_map[self.rule](trainer.epoch_train_records[-1][self.monitor], self._top_k_value[idx]):
                 # remove
                 checkpoint_file = self._top_k_checkpoint.pop(idx)
                 os.remove(os.path.join(trainer.checkpoint_dir, checkpoint_file))

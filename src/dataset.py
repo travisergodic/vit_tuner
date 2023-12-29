@@ -19,7 +19,7 @@ class SingleTaskDataset(Dataset):
         self.image_transform = image_transform 
 
     def __getitem__(self, index):
-        label = int(self.df.loc[index, self.y_col[0]])
+        label = int(self.df.loc[index, self.y_col])
 
         image_path = os.path.join(self.image_dir, self.df.loc[index, self.filename_col])
         image = Image.open(image_path).convert("RGB")
